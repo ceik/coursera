@@ -1,0 +1,549 @@
+---
+title: "Severe Weather Events Impact"
+output: html_document
+---
+
+# Synopsis
+
+This report looks at the impact of a number of weather events on both health and
+the economy in the US. A big part of the analysis is spent on cleaning up the 
+classification for the different events. 
+The report will show that in terms of health, tornados are clearly the most 
+impactful, while in financial terms floods and droughts have the biggest impact.
+
+# Data Processing
+
+## Load & Subset
+
+First the data needs to be loaded into R.
+```{r, cache=TRUE}
+setwd("C:/Chris/cds/repdata/cp2")
+data <- read.csv("storm_data.csv")
+```
+
+Also the required packages need to be loaded.
+```{r, echo=FALSE}
+library(stringr)
+library(dplyr)
+```
+
+Afterwards I subset the data to only include the relevant columns and only those
+rows which will have an impact on the result. This will exclude rows/events in
+which no human was harmed and no economic damage was caused.
+```{r}
+data_sub <- data[, c(8, 23, 24, 25, 26, 27, 28)]
+data_sub2 <- data_sub[(data_sub$PROPDMG > 0 | data_sub$CROPDMG > 0 |
+                           data_sub$FATALITIES > 0 | data_sub$INJURIES > 0),]
+head(data_sub2)
+```
+
+
+## Factor Colum Cleanup
+
+### Event Type
+
+After removing not needed rows there are still 488 different event types, many 
+of them actually being the same.
+
+As a first step I convert the EVTYPE column to character and back to factor in
+order to get rid of factor levels that are not relevant anymore (there were 985
+EVTYPEs before subsetting the data). Afterwards I check my data frame and 
+generate a table with all remaning event type.
+```{r}
+data_sub2$EVTYPE <- as.character(data_sub2$EVTYPE)
+data_sub2$EVTYPE <- as.factor(data_sub2$EVTYPE)
+str(data_sub2)
+```
+
+First I apply general rules to clean up obvious mistakes. This includes extra
+whitespace and converting everything to lowercase.
+```{r}
+data_sub2$EVTYPE <- as.character(data_sub2$EVTYPE)
+data_sub2$EVTYPE <- str_trim(data_sub2$EVTYPE)
+data_sub2$EVTYPE <- gsub("   ", " ", data_sub2$EVTYPE)
+data_sub2$EVTYPE <- gsub("  ", " ", data_sub2$EVTYPE)
+data_sub2$EVTYPE <- tolower(data_sub2$EVTYPE)
+data_sub2$EVTYPE <- as.factor(data_sub2$EVTYPE)
+```
+
+Next I get rid of plural forms of words, abbreviations, and words that are 
+nearly similar in meaning. While this might lead to worse awkward names it will
+improve the quality of the data.
+```{r}
+data_sub2$EVTYPE <- as.character(data_sub2$EVTYPE)
+
+data_sub2$EVTYPE <- gsub("tstm", "thunderstorm", data_sub2$EVTYPE)
+data_sub2$EVTYPE <- gsub("winds", "wind", data_sub2$EVTYPE)
+data_sub2$EVTYPE <- gsub("flooding", "flood", data_sub2$EVTYPE)
+data_sub2$EVTYPE <- gsub("floods", "flood", data_sub2$EVTYPE)
+data_sub2$EVTYPE <- gsub("cstl", "coastal", data_sub2$EVTYPE)
+data_sub2$EVTYPE <- gsub("\\\\", "/", data_sub2$EVTYPE)
+data_sub2$EVTYPE <- gsub("waves", "wave", data_sub2$EVTYPE)
+data_sub2$EVTYPE <- gsub("rains", "rain", data_sub2$EVTYPE)
+data_sub2$EVTYPE <- gsub("snow-squalls", "snow squalls", data_sub2$EVTYPE)
+data_sub2$EVTYPE <- gsub("avalance", "avalanche", data_sub2$EVTYPE)
+data_sub2$EVTYPE <- gsub("squalls", "squall", data_sub2$EVTYPE)
+data_sub2$EVTYPE <- gsub("hvy", "heavy", data_sub2$EVTYPE)
+data_sub2$EVTYPE <- gsub("landslides", "landslide", data_sub2$EVTYPE)
+data_sub2$EVTYPE <- gsub("snowfall", "snow", data_sub2$EVTYPE)
+data_sub2$EVTYPE <- gsub("lighting", "lightning", data_sub2$EVTYPE)
+data_sub2$EVTYPE <- gsub("precipitationitation", "rain", data_sub2$EVTYPE)
+data_sub2$EVTYPE <- gsub("precip", "rain", data_sub2$EVTYPE)
+data_sub2$EVTYPE <- gsub("slides", "slide", data_sub2$EVTYPE)
+data_sub2$EVTYPE <- gsub("currents", "current", data_sub2$EVTYPE)
+data_sub2$EVTYPE <- gsub("storms", "storm", data_sub2$EVTYPE)
+data_sub2$EVTYPE <- gsub("thuderstorm", "thunderstorm", data_sub2$EVTYPE)
+data_sub2$EVTYPE <- gsub("thundeerstorm", "thunderstorm", data_sub2$EVTYPE)
+data_sub2$EVTYPE <- gsub("thunderestorm", "thunderstorm", data_sub2$EVTYPE)
+data_sub2$EVTYPE <- gsub("trees", "tree", data_sub2$EVTYPE)
+data_sub2$EVTYPE <- gsub("wins", "wind", data_sub2$EVTYPE)
+data_sub2$EVTYPE <- gsub("thunderstormw", "thunderstorm wind", data_sub2$EVTYPE)
+data_sub2$EVTYPE <- gsub("thunderstormwinds", "thunderstorm wind", data_sub2$EVTYPE)
+data_sub2$EVTYPE <- gsub("thunderstormwind", "thunderstorm wind", data_sub2$EVTYPE)
+data_sub2$EVTYPE <- gsub("thundertorm", "thunderstorm", data_sub2$EVTYPE)
+data_sub2$EVTYPE <- gsub("thunerstorm", "thunderstorm", data_sub2$EVTYPE)
+data_sub2$EVTYPE <- gsub("tornadoes", "tornado", data_sub2$EVTYPE)
+data_sub2$EVTYPE <- gsub("torndao", "tornado", data_sub2$EVTYPE)
+data_sub2$EVTYPE <- gsub("tunderstorm", "thunderstorm", data_sub2$EVTYPE)
+data_sub2$EVTYPE <- gsub("unseasonable", "unseasonably", data_sub2$EVTYPE)
+data_sub2$EVTYPE <- gsub("fld", "flood", data_sub2$EVTYPE)
+data_sub2$EVTYPE <- gsub("floodin", "flood", data_sub2$EVTYPE)
+data_sub2$EVTYPE <- gsub("sml", "small", data_sub2$EVTYPE)
+data_sub2$EVTYPE <- gsub("windchill", "wind chill", data_sub2$EVTYPE)
+data_sub2$EVTYPE <- gsub("coastalstorm", "coastal storm", data_sub2$EVTYPE)
+data_sub2$EVTYPE <- gsub("excessive", "heavy", data_sub2$EVTYPE)
+data_sub2$EVTYPE <- gsub("extreme", "heavy", data_sub2$EVTYPE)
+data_sub2$EVTYPE <- gsub("ice on road", "icy roads", data_sub2$EVTYPE)
+data_sub2$EVTYPE <- gsub("ice roads", "icy roads", data_sub2$EVTYPE)
+data_sub2$EVTYPE <- gsub("lake effect", "lake-effect", data_sub2$EVTYPE)
+data_sub2$EVTYPE <- gsub("lakeshore", "lake", data_sub2$EVTYPE)
+data_sub2$EVTYPE <- gsub("ligntning", "lightning", data_sub2$EVTYPE)
+data_sub2$EVTYPE <- gsub("mudslide", "mud slide", data_sub2$EVTYPE)
+data_sub2$EVTYPE <- gsub("non thunderstorm", "non-thunderstorm", data_sub2$EVTYPE)
+data_sub2$EVTYPE <- gsub("severe", "heavy", data_sub2$EVTYPE)
+data_sub2$EVTYPE <- gsub("small", "light", data_sub2$EVTYPE)
+data_sub2$EVTYPE <- gsub("rainfall", "rain", data_sub2$EVTYPE)
+data_sub2$EVTYPE <- gsub("shower", "rain", data_sub2$EVTYPE)
+data_sub2$EVTYPE <- gsub("fires", "fire", data_sub2$EVTYPE)
+
+data_sub2$EVTYPE <- as.factor(data_sub2$EVTYPE)
+```
+
+Afterwards I replace/remove special characters. The most important aspect here 
+is how to link different event types. E.g. "rain and flood" vs. "rain/flood".
+I have decided to use " / " to link multiple event types. E.g. "rain / flood".
+
+Also I have decided to treat event types with multiple events as separate events
+types, instead of attributing the damage to each single one or splitting it. The
+reason is that splitting would be arbitrary and counting damage twice will skew 
+the data.
+```{r}
+data_sub2$EVTYPE <- as.character(data_sub2$EVTYPE)
+
+data_sub2$EVTYPE <- gsub("\\?", "other", data_sub2$EVTYPE)
+data_sub2$EVTYPE <- gsub(" and ", " / ", data_sub2$EVTYPE)
+data_sub2$EVTYPE <- gsub("[./-]$", "", data_sub2$EVTYPE)
+data_sub2$EVTYPE <- gsub("/", " / ", data_sub2$EVTYPE)
+data_sub2$EVTYPE <- gsub("   ", " ", data_sub2$EVTYPE)
+data_sub2$EVTYPE <- gsub("  ", " ", data_sub2$EVTYPE)
+data_sub2$EVTYPE <- gsub(" and ", " / ", data_sub2$EVTYPE)
+data_sub2$EVTYPE <- gsub(" and$", "", data_sub2$EVTYPE)
+data_sub2$EVTYPE <- gsub("\\&", "/", data_sub2$EVTYPE)
+data_sub2$EVTYPE <- gsub(" - ", " / ", data_sub2$EVTYPE)
+data_sub2$EVTYPE <- gsub(", ", " / ", data_sub2$EVTYPE)
+
+data_sub2$EVTYPE <- as.factor(data_sub2$EVTYPE)
+```
+
+
+Next I'm removing all names and indicators of intensity.
+```{r}
+data_sub2$EVTYPE <- as.character(data_sub2$EVTYPE)
+
+data_sub2$EVTYPE <- gsub(" 0.75| 075| 100| 125| 150| 175| 200| 275| 450| 75| damage| \\(g40\\)| 48| edouard| emily| erin| felix| gordon| opal| accident| mishap| \\(41\\)| \\(g35\\)| \\(g40\\)| \\(g45\\)| / awning| / tree| 13| 40| 45| 55$| 60 mph| 63 mph| 65 mph| 65)| 65mph| 98 mph| g45| g50| g52| g55| g58| g60| tree| windind| f0| f1| f2| f3| alberto| dean| gordon| jerry| \\(minor", 
+                         "", data_sub2$EVTYPE)
+
+data_sub2$EVTYPE <- as.factor(data_sub2$EVTYPE)
+```
+
+
+As a last step I am combining different events that should be in the same group
+according to the data documentation, which specifies 48 unique event types.
+
+I group everything that does not fall into one of these 48 event types into
+"other".
+
+Blizzard
+```{r}
+data_sub2$EVTYPE <- gsub("blizzard / winter storm|ground blizzard", 
+                         "blizzard", data_sub2$EVTYPE)
+```
+
+Coastal Flood
+```{r}
+data_sub2$EVTYPE <- gsub("coastal erosion|astronomical high tide|coastal flood / erosion|coastal surge|erosion / coastal flood|high tides|high water|tidal flood", 
+                         "coastal flood", data_sub2$EVTYPE)
+```
+
+Cold / Wind Chill
+```{r}
+data_sub2$EVTYPE <- gsub("cold / snow|cold / wet conditions|cold temperature|cold wave|cold weather|cool / wet|hypothermia|hypothermia / exposure|low temperature|bitter cold|unseasonably cold|cold / wind$|cold$",
+                         "cold / wind chill", data_sub2$EVTYPE)
+```
+
+Debris Flow
+```{r}
+data_sub2$EVTYPE <- gsub("landslide|mud slide urban flood|mud slide|rock slide", 
+                         "debris flow", data_sub2$EVTYPE)
+```
+
+Dense Fog
+```{r}
+data_sub2$EVTYPE <- gsub("^fog", "dense fog", data_sub2$EVTYPE)
+```
+
+Excessive Heat
+```{r}
+data_sub2$EVTYPE <- gsub("heavy heat|record / heavy heat|record heat|hyperthermia / exposure", 
+                         "excessive heat", data_sub2$EVTYPE)
+```
+
+Extreme Cold / Wind Chill
+```{r}
+data_sub2$EVTYPE <- gsub("extended cold|heavy wind chill|record cold", 
+                         "extreme cold / wind chill", data_sub2$EVTYPE)
+```
+
+Flash Flood
+```{r}
+data_sub2$EVTYPE <- gsub("dam break|flash flood / street|flash flood from ice jams|flash flood wind|flood flash|flood / flash|ice jam flood|ice jam|ice floes",
+                         "flash flood", data_sub2$EVTYPE)
+```
+
+Flood
+```{r}
+data_sub2$EVTYPE <- gsub("breakup flood|flood / river flood|light stream flood|major flood|minor flood|river / stream flood|river flood|rural flood|snowmelt flood|urban / light stream flood|urban flood|urban light|urban / light stream|urban / light",
+                         "flood", data_sub2$EVTYPE)
+```
+
+Freezing Fog
+```{r}
+data_sub2$EVTYPE <- gsub("glaze ice|glaze / ice storm|glaze|freezing dense fog", 
+                         "freezing fog", data_sub2$EVTYPE)
+```
+
+Frost / Freeze
+```{r}
+data_sub2$EVTYPE <- gsub("black ice|damaging freeze|early frost|hard freeze|icy roads", 
+                         "frost / freeze", data_sub2$EVTYPE)
+```
+
+Funnel Cloud
+```{r}
+data_sub2$EVTYPE <- gsub("funnel clou$", 
+                         "funnel cloud", data_sub2$EVTYPE)
+```
+
+Hail
+```{r}
+data_sub2$EVTYPE <- gsub("hailstorm|light hail", 
+                         "hail", data_sub2$EVTYPE)
+```
+
+Heat
+```{r}
+data_sub2$EVTYPE <- gsub("heat wave|unseasonably warm / dry|unseasonably warm|warm weather", 
+                         "heat", data_sub2$EVTYPE)
+```
+
+Heavy Rain
+```{r}
+data_sub2$EVTYPE <- gsub("raintorm|record rainfall|torrential rainfall|unseasonal rain|torrential rain|record rain|^rain", 
+                         "heavy rain", data_sub2$EVTYPE)
+```
+
+Heavy Snow
+```{r}
+data_sub2$EVTYPE <- gsub("falling snow / ice|heavy snow shower|heavy snow squall|heavy snowpack|record snow|snow / blowing snow|snow accumulation|snow squall|thundersnow|^snow", 
+                         "heavy snow", data_sub2$EVTYPE)
+```
+
+High Surf
+```{r}
+data_sub2$EVTYPE <- gsub("beach erosion|hazardous surf|heavy surf|heavy swells|high surf advisory|high swells|high wave|rough surf", 
+                         "high surf", data_sub2$EVTYPE)
+```
+
+Hurricane / Typhoon
+```{r}
+data_sub2$EVTYPE <- gsub("^typhoon", 
+                         "hurricane / typhoon", data_sub2$EVTYPE)
+```
+
+Ice Storm
+```{r}
+data_sub2$EVTYPE <- gsub("ice$", 
+                         "ice storm", data_sub2$EVTYPE)
+```
+
+Hurricane / Typhoon
+```{r}
+data_sub2$EVTYPE <- gsub("hurricane|hurricane-generated swells", 
+                         "hurricane / typhoon", data_sub2$EVTYPE)
+```
+
+Lakeshore Flood
+```{r}
+data_sub2$EVTYPE <- gsub("lake flood", 
+                         "lakeshore flood", data_sub2$EVTYPE)
+```
+
+Lake-Effect Snow
+```{r}
+data_sub2$EVTYPE <- gsub("heavy lake snow",
+                         "lake-effect snow", data_sub2$EVTYPE)
+```
+
+Lightning
+```{r}
+data_sub2$EVTYPE <- gsub("lightning fire|lightning wauseon|lightning injury", 
+                         "lightning", data_sub2$EVTYPE)
+```
+
+Storm Tide
+```{r}
+data_sub2$EVTYPE <- gsub("storm surge|storm surge / tide", 
+                         "storm tide", data_sub2$EVTYPE)
+```
+
+Strong Wind
+```{r}
+data_sub2$EVTYPE <- gsub("wind / wave|gusty wind|wind storm|^wind", 
+                         "strong wind", data_sub2$EVTYPE)
+```
+
+Thunderstorm Wind
+```{r}
+data_sub2$EVTYPE <- gsub("downburst|dry microburst|dry mircoburst wind|gustnado|microburst|microburst wind|wet microburst|whirlwind|thunderstorm win$|thunderstorm wi$|heavy thunderstorm wind|heavy thunderstorm", 
+                         "thunderstorm wind", data_sub2$EVTYPE)
+```
+
+Tornado
+```{r}
+data_sub2$EVTYPE <- gsub("cold air tornado|landspout", 
+                         "tornado", data_sub2$EVTYPE)
+```
+
+Tropical Depression
+```{r}
+data_sub2$EVTYPE <- gsub("gradient wind", 
+                         "tropical depression", data_sub2$EVTYPE)
+```
+
+Tropical Storm
+```{r}
+data_sub2$EVTYPE <- gsub("coastal storm", 
+                         "tropical storm", data_sub2$EVTYPE)
+```
+
+Wildfire
+```{r}
+data_sub2$EVTYPE <- gsub("brush fire|forest fire|grass fire|wild / forest fire|wild fire", 
+                         "wildfire", data_sub2$EVTYPE)
+```
+
+Winter Storm
+```{r}
+data_sub2$EVTYPE <- gsub("heavy snow / strong wind|heavy snow / wind",
+                         "winter storm", data_sub2$EVTYPE)
+```
+
+Winter Weather
+```{r}
+data_sub2$EVTYPE <- gsub("freezing drizzle|freezing rain / sleet| freezing rain / snow|freezing rain|freezing spray|light snow|winter weather / mix|winter weather mix|wintry mix|light winter weather", 
+                         "winter weather", data_sub2$EVTYPE)
+```
+
+Other & Multi Events
+```{r}
+data_sub2$EVTYPE <- gsub("agricultural freeze|apache county|blowing dust|blowing snow|heavy mix| / heavy weather|/ light stream urban|heavy seas| / squall|heavy turbulence|heavy wetness|high seas|landslump|late season snow|non-heavy wind|non-thunderstorm wind|rapidly rising water|rogue wave|rough seas|storm force wind|drowning|marine$|high$", 
+                         "other", data_sub2$EVTYPE)
+data_sub2$EVTYPE <- gsub("dust devil waterspout", 
+                         "dust devil / waterspout", data_sub2$EVTYPE)
+data_sub2$EVTYPE <- gsub("flash flood debris flow", 
+                         "flash flood / debris flow", data_sub2$EVTYPE)
+data_sub2$EVTYPE <- gsub("flood / flash flood|flood / flashflood", 
+                         "flash flood / flood", data_sub2$EVTYPE)
+data_sub2$EVTYPE <- gsub("flood / rain / wind|flood and heavy rain", 
+                         "flood / heavy rain", data_sub2$EVTYPE)
+data_sub2$EVTYPE <- gsub("lightning thunderstorm wind", 
+                         "lightning / thunderstorm wind", data_sub2$EVTYPE)
+data_sub2$EVTYPE <- gsub("rain / snow", 
+                         "heavy rain / heavy snow", data_sub2$EVTYPE)
+data_sub2$EVTYPE <- gsub("rain / wind", 
+                         "heavy rain / strong wind", data_sub2$EVTYPE)
+data_sub2$EVTYPE <- gsub("waterspout tornado|waterspout-tornado", 
+                         "waterspout / tornado", data_sub2$EVTYPE)
+data_sub2$EVTYPE <- gsub("winter storm high wind", 
+                         "high wind / winter storm", data_sub2$EVTYPE)
+data_sub2$EVTYPE <- gsub("hail / wind", 
+                         "hail / strong wind", data_sub2$EVTYPE)
+data_sub2$EVTYPE <- gsub("heat drought", 
+                         "drought / heat", data_sub2$EVTYPE)
+data_sub2$EVTYPE <- gsub("high wind heavy rain", 
+                         "heavy rain / high wind", data_sub2$EVTYPE)
+data_sub2$EVTYPE <- gsub("heavy snow winter weather", 
+                         "heavy snow / winter weather", data_sub2$EVTYPE)
+data_sub2$EVTYPE <- gsub("heavy snow rain", 
+                         "heavy snow / heavy rain", data_sub2$EVTYPE)
+data_sub2$EVTYPE <- gsub("high surf coastal flood", 
+                         "high surf / coastal flood", data_sub2$EVTYPE)
+data_sub2$EVTYPE <- gsub("high surf / wind", 
+                         "high surf / strong wind", data_sub2$EVTYPE)
+data_sub2$EVTYPE <- gsub("ice / strong wind", 
+                         "ice storm / strong wind", data_sub2$EVTYPE)
+data_sub2$EVTYPE <- gsub("ice / snow", 
+                         "heavy snow / ice storm", data_sub2$EVTYPE)
+data_sub2$EVTYPE <- gsub("strong wind / rain", 
+                         "heavy rain / strong wind", data_sub2$EVTYPE)
+data_sub2$EVTYPE <- gsub("thunderstorm hail|thunderstorm wind hail|thunderstorm windhail", 
+                         "thunderstorm wind / hail", data_sub2$EVTYPE)
+data_sub2$EVTYPE <- gsub("thunderstorm wind lightning", 
+                         "thunderstorm wind / lightning", data_sub2$EVTYPE)
+
+data_sub2$EVTYPE <- as.factor(data_sub2$EVTYPE)
+```
+
+Lastly some of the repitions need to be removed.
+```{r}
+data_sub2$EVTYPE <- gsub("dense dense","dense", data_sub2$EVTYPE)
+data_sub2$EVTYPE <- gsub("wind chill / wind chill","wind chill", data_sub2$EVTYPE)
+data_sub2$EVTYPE <- gsub("flood flood|floodflood","flood", data_sub2$EVTYPE)
+data_sub2$EVTYPE <- gsub("hail $","hail", data_sub2$EVTYPE)
+data_sub2$EVTYPE <- gsub("heavy heavy","heavy", data_sub2$EVTYPE)
+data_sub2$EVTYPE <- gsub("heavy rain other|heavy rainitation|heavy rainother|mixed rain|mixed rainitation",
+                         "heavy rain", data_sub2$EVTYPE)
+data_sub2$EVTYPE <- gsub("heavy snow / heavy snow","heavy snow", data_sub2$EVTYPE)
+data_sub2$EVTYPE <- gsub("heavy snowother","heavy snow", data_sub2$EVTYPE)
+data_sub2$EVTYPE <- gsub("high surf / high surf","high surf", data_sub2$EVTYPE)
+data_sub2$EVTYPE <- gsub("high wind $","high wind", data_sub2$EVTYPE)
+data_sub2$EVTYPE <- gsub("typhoon / typhoon","typhoon", data_sub2$EVTYPE)
+data_sub2$EVTYPE <- gsub("  to","wind", data_sub2$EVTYPE)
+data_sub2$EVTYPE <- gsub("wind $","wind", data_sub2$EVTYPE)
+data_sub2$EVTYPE <- gsub("wind53","wind", data_sub2$EVTYPE)
+data_sub2$EVTYPE <- gsub("thunderstrom wind|thunderstorm winds|thunderstorm$|thunderstorm to",
+                         "thunderstorm wind", data_sub2$EVTYPE)
+data_sub2$EVTYPE <- gsub(" / snow"," / heavy snow", data_sub2$EVTYPE)
+data_sub2$EVTYPE <- gsub("^freeze|frost$","frost / freeze", data_sub2$EVTYPE)
+data_sub2$EVTYPE <- gsub(" / seas","", data_sub2$EVTYPE)
+
+data_sub2$EVTYPE <- as.factor(data_sub2$EVTYPE)
+
+str(data_sub2)
+```
+
+
+# Results
+
+The results are split in two parts, one looking at the impact of severe weather
+events on human health, the other part looking at economic consequences.
+
+## Health Impact
+
+Impact on human health is measured by two variables in the data: One for 
+fatalities and one for injuries. I will assess which event is more harmful based
+on the total number of fatalities/injuries. This gives different result than 
+looking at the mean per event type because some events are less frequent but 
+more harmful when they occur. However the assignment asks for impact on
+population health, so the total seems more fitting.
+
+```{r, fig.height=12}
+data_grouped <- group_by(data_sub2, EVTYPE)
+summary <- summarize(data_grouped, sum_fat = sum(FATALITIES), 
+                     mean_fat = round(mean(FATALITIES, na.rm=T), digits = 2), 
+                     sum_inj = sum(INJURIES), 
+                     mean_inj = round(mean(INJURIES, na.rm=T), digits = 2), 
+                     count = n())
+df <- data.frame(summary)
+df_filt <- filter(df, count > 100 & (sum_inj > 40 | sum_fat > 40))
+df_fat <- arrange(df_filt, desc(sum_fat))
+df_inj <- arrange(df_filt, desc(sum_inj))
+df_fat
+df_inj
+par(mar = c(4,10,1,1), mfrow = c(2,1))
+barplot(height = df_fat$sum_fat, names.arg = df_fat$EVTYPE, horiz = T,
+        las = 2)
+title("Total Fatalities by Event Type", adj=1)
+barplot(height = df_inj$sum_inj, names.arg = df_inj$EVTYPE, horiz = T,
+        las = 2)
+title("Total Injuries by Event Type", adj=1)
+
+```
+
+I filtered out the least relevant event types, based on their frequency, number
+of fatalities, and number of injuries.
+
+It can be seen that for both variables, tornado is the most harmful event. 
+However when only looking at fatalities, heat and excessive heat take the second
+and third place, while they fall further behind when only looking at injuries. 
+Based on injuries thunderstorm wind moves to second place.
+
+## Economical Impact
+
+The two relevant variables for economical impact are crop damage and property
+damage. They both need to first be manipulated based on the PROPDMGEXP and 
+CROPDMGEXP columns.
+
+```{r}
+econ <- data_sub2
+econ$PROPDMGEXP <- gsub("^$","1",econ$PROPDMGEXP)
+econ$PROPDMGEXP <- gsub("\\-|\\+|0|2|3|4|5|6|7|8","1",econ$PROPDMGEXP)
+econ$PROPDMGEXP <- gsub("h|H","100",econ$PROPDMGEXP)
+econ$PROPDMGEXP <- gsub("K","1000",econ$PROPDMGEXP)
+econ$PROPDMGEXP <- gsub("m|M","1000000",econ$PROPDMGEXP)
+econ$PROPDMGEXP <- gsub("b|B","1000000000",econ$PROPDMGEXP)
+
+econ$CROPDMGEXP <- gsub("^$","1",econ$CROPDMGEXP)
+econ$CROPDMGEXP <- gsub("\\?|0","1",econ$CROPDMGEXP)
+econ$CROPDMGEXP <- gsub("k|K","1000",econ$CROPDMGEXP)
+econ$CROPDMGEXP <- gsub("m|M","1000000",econ$CROPDMGEXP)
+econ$CROPDMGEXP <- gsub("b|B","1000000000",econ$CROPDMGEXP)
+
+econ$CROPDMGEXP <- as.numeric(econ$CROPDMGEXP)
+econ$PROPDMGEXP <- as.numeric(econ$PROPDMGEXP)
+
+econ <- mutate(econ, prop = PROPDMG*PROPDMGEXP, crop = CROPDMG*CROPDMGEXP)
+```
+
+The resulting new variables prop and crop, which indicate the damage caused by
+each event, can be analyzed in the same fashion.
+
+```{r, fig.height=12}
+data_grouped <- group_by(econ, EVTYPE)
+summary <- summarize(data_grouped, 
+                     sum_prop = round(sum(prop)/1000000, digits = 0), 
+                     mean_prop = round(mean(prop, na.rm=T)/1000000,digits = 2), 
+                     sum_crop = round(sum(crop)/1000000, digits = 0), 
+                     mean_crop = round(mean(crop, na.rm=T)/1000000, digits = 2), 
+                     count = n())
+df <- data.frame(summary)
+df_filt <- filter(df, count > 100 & (sum_prop > 0 | sum_crop > 0))
+df_prop <- arrange(df_filt, desc(sum_prop))
+df_crop <- arrange(df_filt, desc(sum_crop))
+df_prop
+df_crop
+par(mar = c(4,11,5,1), mfrow = c(2,1))
+barplot(height = df_prop$sum_prop, names.arg = df_prop$EVTYPE, horiz = T,
+        las = 2)
+title("Total Property Damage (in m) by Event Type", adj=1)
+barplot(height = df_crop$sum_crop, names.arg = df_crop$EVTYPE, horiz = T,
+        las = 2)
+title("Total Crop Damage (in m) by Event Type", adj=1)
+```
+
+Again, I filtered out the least relevant entries, based on frequency, property
+damage and crop damage.
+
+When looking at property damage, it can be seen that floods have been the most
+expensive, followed by hurricanes/typhoons and tornados. However with regards
+to crop damage droughts clearly overtake floods as the most expensive event. 

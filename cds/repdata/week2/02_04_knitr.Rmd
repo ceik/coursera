@@ -1,0 +1,94 @@
+My First knitr Document
+=============================
+
+Global options for the whole document can be set (but later overridden). Common
+options are:
+
+- results: "asis" or "hide"
+- echo: TRUE or FALSE
+- fig.height: numeric
+- fig.width: numeric
+```{r set_options, echo=FALSE}
+# Remove the # below to activate the options
+# opts_chunk$set(echo=FALSE, results="hide")
+```
+
+This is some text
+
+Here is a code chunk
+```{r}
+set.seed(1)
+x <- rnorm(100)
+mean(x)
+```
+
+Here is a second, named code chunk
+```{r second_chunk}
+y <- rnorm(100)
+sd(y)
+```
+
+
+Headlines can also be done like this:
+
+# First header
+
+## second header
+
+Results can also be hidden:
+```{r results="hide"}
+z <- rnorm(100)
+z
+```
+
+# Output from code can also be added into the text
+```{r echo = FALSE}
+time <- format(Sys.time(), "%a %b %d %X %Y")
+rand <- rnorm(1)
+```
+
+The current time is `r time`. My favorite random number is `r rand`.
+
+# Incorporating Graphics
+
+Let's first simulate some data.
+```{r sim_data, echo=TRUE}
+x <- rnorm(100)
+y <- x + rnorm(100, sd = 0.5)
+```
+
+Here is a scatterplot of that data. The image of the plot will actually be 
+stored in the file itself.
+```{r scatterplot, fig.height = 4}
+par(mar = c(5,4,1,1), las = 1)
+plot(x, y, main = "My Simulated Data")
+```
+
+# Making Tables with Xtable
+
+```{r fitmodel}
+library(datasets)
+data(airquality)
+fit <- lm(Ozone ~ Wind + Temp + Solar.R, data = airquality)
+```
+
+Here is the table of the regression coefficients
+```{r showtable, results="asis"}
+library(xtable)
+xt <- xtable(summary(fit))
+print(xt, type = "html")
+```
+
+# Caching
+
+Computations of the R code can be cached on a chunk by chunk basis. The results 
+are still computed the first time the code is run, but will be stored on the 
+disk. This will save a lot of time for long cumputations. This can be done with
+the cache=TRUE option.
+
+In this process dependencies are not checked and sometimes chunks have to be 
+rerun automatically. This also needs to happen when external things change (e.g.
+stored data).
+
+Also chunks with significant side effects can not be cached (e.g. if it modifies
+something outside of the document). 
