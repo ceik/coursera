@@ -1,3 +1,4 @@
 *.csv
 *.rds
-cds\getdata\course_project\UCI HAR Dataset
+/cds/getdata\course_project/UCI HAR Dataset
+/data_science_at_scale/data_manipulation_at_scale/week1/assignment1/api_settings.yaml
