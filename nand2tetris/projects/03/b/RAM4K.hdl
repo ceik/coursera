@@ -5,8 +5,8 @@
 
 /**
  * Memory of 4K registers, each 16 bit-wide. Out holds the value
- * stored at the memory location specified by address. If load==1, then 
- * the in value is loaded into the memory location specified by address 
+ * stored at the memory location specified by address. If load==1, then
+ * the in value is loaded into the memory location specified by address
  * (the loaded value will be emitted to out from the next time step onward).
  */
 
@@ -15,5 +15,28 @@ CHIP RAM4K {
     OUT out[16];
 
     PARTS:
-    // Put your code here:
+    DMux (in=load, sel=address[2], a=DM0, b=DM1);
+    DMux (in=DM0, sel=address[1], a=DM00, b=DM01);
+    DMux (in=DM1, sel=address[1], a=DM10, b=DM11);
+    DMux (in=DM00, sel=address[0], a=DM000, b=DM001);
+    DMux (in=DM01, sel=address[0], a=DM010, b=DM011);
+    DMux (in=DM10, sel=address[0], a=DM100, b=DM101);
+    DMux (in=DM11, sel=address[0], a=DM110, b=DM111);
+
+    RAM512 (in=in, load=DM000, address=address[3..11], out=out000);
+    RAM512 (in=in, load=DM001, address=address[3..11], out=out001);
+    RAM512 (in=in, load=DM010, address=address[3..11], out=out010);
+    RAM512 (in=in, load=DM011, address=address[3..11], out=out011);
+    RAM512 (in=in, load=DM100, address=address[3..11], out=out100);
+    RAM512 (in=in, load=DM101, address=address[3..11], out=out101);
+    RAM512 (in=in, load=DM110, address=address[3..11], out=out110);
+    RAM512 (in=in, load=DM111, address=address[3..11], out=out111);
+
+    Mux16 (a=out000, b=out001, sel=address[0], out=out00);
+    Mux16 (a=out010, b=out011, sel=address[0], out=out01);
+    Mux16 (a=out100, b=out101, sel=address[0], out=out10);
+    Mux16 (a=out110, b=out111, sel=address[0], out=out11);
+    Mux16 (a=out00, b=out01, sel=address[1], out=out0);
+    Mux16 (a=out10, b=out11, sel=address[1], out=out1);
+    Mux16 (a=out0, b=out1, sel=address[2], out=out);
 }
