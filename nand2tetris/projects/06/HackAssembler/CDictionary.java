@@ -3,7 +3,7 @@ package HackAssembler;
 import java.util.Hashtable;
 
 // Stores Hashtables for the translation of c-instructions
-public class cDictionary {
+public class CDictionary {
     public static Hashtable<String, String> dest;
     public static Hashtable<String, String> comp;
     public static Hashtable<String, String> jump;
@@ -62,7 +62,7 @@ public class cDictionary {
         table.put("JMP", "111");
     }
 
-    public cDictionary() {
+    public CDictionary() {
         dest = new Hashtable<String, String>();
         comp = new Hashtable<String, String>();
         jump = new Hashtable<String, String>();

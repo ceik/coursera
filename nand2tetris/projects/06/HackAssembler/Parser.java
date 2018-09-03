@@ -2,15 +2,27 @@ package HackAssembler;
 
 import java.util.Hashtable;
 
+
 // The parser's purpose is to translate single lines of Hack Assembly code into
 // machine code for the hack computer.
 // For a detailed description on how this is supposed to work see:
 // https://docs.wixstatic.com/ugd/44046b_b73759b866b249a0b3a715bf5a18f668.pdf
 public class Parser {
-    static cDictionary dict;
+    static CDictionary cTable;
+    static SymbolTable symTable;
+    // variableCounter keeps track of the address to put variables into. By
+    // definition it starts at address 16.
+    static int variableCounter;
 
-    public Parser(cDictionary inputDict) {
-        dict = inputDict;
+    public Parser(CDictionary inputDict, SymbolTable inputSymTable) {
+        cTable = inputDict;
+        symTable = inputSymTable;
+        variableCounter = 16;
+    }
+
+    static void processLabel(String labelLine, int lineCounter) {
+        String cleanLabel = labelLine.replaceAll("[()]","");
+        symTable.table.put(cleanLabel, Integer.toString(lineCounter));
     }
 
     // c-instructions are structured like: 'dest=comp;jump'. This method breaks
@@ -51,34 +63,65 @@ public class Parser {
         return returnValue;
     }
 
+    // Parse the c-instruction by first tokenizing it and then looking up the
+    // three parts in their corresponing hashtables
+    static String parseC(String sourceLine) {
+        String[] tokenizedC = tokenizeC(sourceLine);
+
+        String destValue = cTable.dest.get(tokenizedC[0]);
+        String compValue = cTable.comp.get(tokenizedC[1]);
+        String jumpValue = cTable.jump.get(tokenizedC[2]);
+
+        return "111" + compValue + destValue + jumpValue;
+    }
+
+    static String parseA(String sourceLine) {
+        String aValue = sourceLine.substring(1);
+        int intA;
+        String outLine;
+
+        // Parse plain a-instructions (which contain only numbers)
+        // The output must start with a 0 and be 16 bits long in total
+        if (aValue.matches("^\\d+$")) {
+            intA = Integer.parseInt(aValue);
+            outLine = String.format("0%15s",
+                Integer.toBinaryString(intA)).replace(' ', '0');
+        // Parse variables
+        } else {
+            // If the value is not yet in the symbol table, add it
+            if (!symTable.table.containsKey(aValue)) {
+                symTable.table.put(aValue, Integer.toString(variableCounter));
+                variableCounter += 1;
+            }
+            // Get the value of the variable from the symbol table
+            intA = Integer.parseInt(symTable.table.get(aValue));
+            outLine = String.format("0%15s",
+                Integer.toBinaryString(intA)).replace(' ', '0');
+        }
+
+        return outLine;
+    }
+
     // This method is called by HackAssembler to translate all lines.
     // HackAssembler will not write empty lines to output file.
     static String translateLine(String sourceLine) {
         String outLine;
-        int intA;
         String[] tokenizedC;
 
         if (sourceLine.isEmpty()) {
             outLine = "";
-
         // parse comments
         } else if (sourceLine.substring(0, 2).equals("//")) {
             outLine = "";
-
+        // parse label symbols
+        } else if (sourceLine.substring(0, 1).equals("(")) {
+            outLine = "";
         // parse A instructions
         } else if (sourceLine.substring(0, 1).equals("@")) {
-            intA = Integer.parseInt(sourceLine.substring(1));
-            outLine = String.format("0%15s",
-                Integer.toBinaryString(intA)).replace(' ', '0');
-
+            outLine = parseA(sourceLine);
         // parse C instructions
         } else {
-            tokenizedC = tokenizeC(sourceLine);
-            String destValue = dict.dest.get(tokenizedC[0]);
-            String compValue = dict.comp.get(tokenizedC[1]);
-            String jumpValue = dict.jump.get(tokenizedC[2]);
-
-            outLine = "111" + compValue + destValue + jumpValue;
+            outLine = parseC(sourceLine);
         }
 
         return outLine;
