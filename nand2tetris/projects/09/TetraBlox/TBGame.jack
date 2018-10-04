@@ -1,0 +1,34 @@
+
+
+class TBGame {
+    field int level;
+    field int score;
+    field int lines;
+    field int seed;
+
+    constructor TBGame new() {
+        let level = 1;
+        let score = 0;
+        let lines = 0;
+        return this;
+    }
+
+    method void run() {
+        let seed = GetSeed.get();
+
+
+
+        do Output.printInt(LCGRandom.randRange(1, 7));
+
+        // do Playfield.draw();
+
+        return;
+    }
+
+    method void dispose() {
+        do Memory.deAlloc(this);
+        return;
+    }
+
+}
+

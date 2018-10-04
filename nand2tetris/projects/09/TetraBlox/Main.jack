@@ -1,0 +1,12 @@
+
+
+// Creates a new Tetra Blox Game, starts it, and disposes it once finished
+class Main {
+    function void main() {
+        var TBGame game;
+        let game = TBGame.new();
+        do game.run();
+        do game.dispose();
+        return;
+    }
+}

@@ -1,0 +1,11 @@
+class GetSeed {
+    field int seed;
+
+    method int get() {
+        while (~exit)
+        let seed = Keyboard.readInt("Please input a random number between 1-1000");
+        do LCGRandom.setSeed(seed);
+
+    }
+
+}
