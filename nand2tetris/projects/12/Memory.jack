@@ -7,28 +7,93 @@
  * This library provides two services: direct access to the computer's main
  * memory (RAM), and allocation and recycling of memory blocks. The Hack RAM
  * consists of 32,768 words, each holding a 16-bit binary number.
- */ 
+ */
 class Memory {
+
+    static Array ram, heap, freeList;
 
     /** Initializes the class. */
     function void init() {
+        let ram = 0;
+
+        let heap = 2048;
+        let heap[0] = 0;
+        let heap[1] = 14335;
+
+        let freeList = 2048;
+        let freeList[0] = heap[0];
+        let freeList[1] = heap[1];
+
+        return;
     }
 
     /** Returns the RAM value at the given address. */
     function int peek(int address) {
+        return ram[address];
     }
 
     /** Sets the RAM value at the given address to the given value. */
     function void poke(int address, int value) {
+        let ram[address] = value;
+
+        return;
     }
 
     /** Finds an available RAM block of the given size and returns
      *  a reference to its base address. */
     function int alloc(int size) {
+        var int freeBlock;
+
+        let freeBlock = Memory.searchFreeList(0, size + 2) - 2048;
+
+        return freeBlock;
+    }
+
+    function int searchFreeList(int addr, int targetSize) {
+        var int currSize, nextBlock, freeBlock;
+
+        let nextBlock = freeList[addr];
+        let currSize = freeList[addr + 1];
+
+        if (currSize + 2 + 1 > targetSize) {
+            let freeBlock = addr + currSize - targetSize;
+            // Update current BLock
+            let freeList[addr + 1] = currSize - targetSize;
+            // Update new Block
+            let freeList[freeBlock] = 0;
+            let freeList[freeBlock + 1] = targetSize;
+
+        } else {
+            let freeBlock = Memory.searchFreeList(nextBlock, targetSize);
+        }
+
+        return freeBlock;
     }
 
     /** De-allocates the given object (cast as an array) by making
      *  it available for future allocations. */
     function void deAlloc(Array o) {
-    }    
+        var int addr;
+
+        let addr = o - 1;
+
+        if (freeList[0] = 0) {
+            let freeList[0] = addr;
+        } else {
+            do Memory.findLastFreeBlock(freeList[0], addr);
+        }
+
+        return;
+    }
+
+    function void findLastFreeBlock(int addr, int targetAddr) {
+        var int nextBlock;
+        if (Memory.peek(addr) = 0) {
+            do Memory.poke(addr, targetAddr);
+        } else {
+            do Memory.findLastFreeBlock(Memory.peek(addr), targetAddr);
+        }
+
+        return;
+    }
 }

@@ -1,0 +1,101 @@
+// class start
+// class name: Main
+function Main.main 1
+  push constant 8001
+  push constant 16
+  push constant 1
+  neg
+  call Main.fillMemory 3
+  push constant 8000
+  call Memory.peek 1
+  pop local 0
+  push local 0
+  call Main.convert 1
+  return
+function Main.convert 3
+  push constant 1
+  neg
+  pop local 2
+label whileStartMain.convert.Main0
+  push local 2
+  not
+  if-goto whileEndMain.convert.Main0
+  push local 1
+  push constant 1
+  add
+  pop local 1
+  push local 0
+  call Main.nextMask 1
+  pop local 0
+  push local 1
+  push constant 16
+  gt
+  not
+  not
+  if-goto elseClauseMain.convert.Main1
+  push argument 0
+  push local 0
+  and
+  push constant 0
+  eq
+  not
+  not
+  if-goto elseClauseMain.convert.Main2
+  push constant 8000
+  push local 1
+  add
+  push constant 1
+  call Memory.poke 2
+  goto endMain.convert.Main2
+label elseClauseMain.convert.Main2
+  push constant 8000
+  push local 1
+  add
+  push constant 0
+  call Memory.poke 2
+label endMain.convert.Main2
+  goto endMain.convert.Main1
+label elseClauseMain.convert.Main1
+  push constant 0
+  pop local 2
+label endMain.convert.Main1
+  goto whileStartMain.convert.Main0
+label whileEndMain.convert.Main0
+  return
+function Main.nextMask 0
+  push argument 0
+  push constant 0
+  eq
+  not
+  if-goto elseClauseMain.nextMask.Main0
+  push constant 1
+  return
+  goto endMain.nextMask.Main0
+label elseClauseMain.nextMask.Main0
+  push argument 0
+  push constant 2
+  call Math.multiply 2
+  return
+label endMain.nextMask.Main0
+function Main.fillMemory 0
+label whileStartMain.fillMemory.Main0
+  push argument 1
+  push constant 0
+  gt
+  not
+  if-goto whileEndMain.fillMemory.Main0
+  push argument 0
+  push argument 2
+  call Memory.poke 2
+  push argument 1
+  push constant 1
+  sub
+  pop argument 1
+  push argument 0
+  push constant 1
+  add
+  pop argument 0
+  goto whileStartMain.fillMemory.Main0
+label whileEndMain.fillMemory.Main0
+  return
+// class end
